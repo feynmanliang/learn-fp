@@ -7,8 +7,12 @@ import learnfp.monoid.MonoidOps._
 
 object WriterInstance {
   implicit def writerMonadInstance[W](implicit monoid:Monoid[W]) = new Monad[({type E[X] = Writer[W, X]})#E] {
-    override def pure[A](a: A): Writer[W, A] = ???
-    override def flatMap[A, B](a: Writer[W, A])(fx: A => Writer[W, B]): Writer[W, B] = ???
+    override def pure[A](a: A): Writer[W, A] = Writer.tell(monoid.mzero).fmap(_ => a)
+    override def flatMap[A, B](a: Writer[W, A])(fx: A => Writer[W, B]): Writer[W, B] = Writer(() => {
+      val (w,av) = a.run()
+      val (w2,bv) = fx(av).run()
+      (w |+| w2, bv)
+    })
   }
 
   implicit def writerToMonadOps[W, A](w:Writer[W, A])(implicit monoid:Monoid[W]) = new MonadOps[A, ({type E[X] = Writer[W, X]})#E](w)
