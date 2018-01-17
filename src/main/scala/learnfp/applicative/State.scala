@@ -5,8 +5,13 @@ import learnfp.functor.StateInstance._
 
 object StateInstance {
   implicit def stateApplicativeInstance[S] = new Applicative[({type E[X] = State[S, X]})#E] {
-    override def pure[A](a: A): State[S, A] = ???
-    override def <*>[A, R](fx: State[S, A => R])(a: State[S, A]): State[S, R] = ???
+    override def pure[A](a: A): State[S, A] = State(s => (s, a))
+    override def <*>[A, R](fx: State[S, A => R])(a: State[S, A]): State[S, R] =
+      State(s => {
+        val (s2, f) = fx.run(s)
+        val (s3, a2) = a.run(s2)
+        (s3, f(a2))
+      })
   }
 
   class StatePureApplicativeOps[A](a:A) {
